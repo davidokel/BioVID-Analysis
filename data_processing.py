@@ -1,3 +1,4 @@
+from matplotlib import pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 from scipy.signal import butter, filtfilt, resample
@@ -116,3 +117,50 @@ def preprocess_signals(data, fs, down_sample=None):
         preprocessed_data.append(preprocessed_entry)
 
     return preprocessed_data
+
+
+def plot_signal_samples(data, data_filtered, sample_indices, fs=256, fs_filtered=256):
+    """
+    Plot original, filtered, and difference for all signal types in given samples.
+
+    Args:
+    - data (list of dicts): Original signals.
+    - data_filtered (list of dicts): Filtered signals.
+    - sample_indices (list): Indices of the samples to plot.
+    - fs (int): Sampling frequency for original signals for correct time axis plotting.
+    - fs_filtered (int): Sampling frequency for filtered signals for correct time axis plotting.
+    """
+    for idx in sample_indices:
+        signals = data[idx]['signals'].keys()
+        num_signals = len(signals)
+
+        fig, axs = plt.subplots(num_signals, 3, figsize=(15, 4 * num_signals), constrained_layout=True)
+        fig.suptitle(f'Sample {idx}', fontsize=16)
+
+        for i, key in enumerate(signals):
+            # Original signal time axis
+            time_original = np.arange(len(data[idx]['signals'][key])) / fs
+            # Filtered signal time axis
+            time_filtered = np.arange(len(data_filtered[idx]['signals'][key])) / fs_filtered
+
+            axs[i, 0].plot(time_original, data[idx]['signals'][key], label='Original')
+            axs[i, 0].set_title(f'{key.capitalize()} Signal - Original')
+            axs[i, 0].set_xlabel('Time (s)')
+            axs[i, 0].set_ylabel('Amplitude')
+
+            axs[i, 1].plot(time_filtered, data_filtered[idx]['signals'][key], label='Filtered')
+            axs[i, 1].set_title(f'{key.capitalize()} Signal - Filtered')
+            axs[i, 1].set_xlabel('Time (s)')
+            axs[i, 1].set_ylabel('Amplitude')
+
+            # Resample the original signal to match the sampling rate of the filtered signal
+            resampled_original_signal = resample(data[idx]['signals'][key], len(data_filtered[idx]['signals'][key]))
+            time_diff = np.arange(len(resampled_original_signal)) / fs_filtered
+            diff_signal = resampled_original_signal - data_filtered[idx]['signals'][key]
+
+            axs[i, 2].plot(time_diff, diff_signal, label='Difference')
+            axs[i, 2].set_title(f'{key.capitalize()} Difference (Original - Filtered)')
+            axs[i, 2].set_xlabel('Time (s)')
+            axs[i, 2].set_ylabel('Amplitude')
+
+        plt.show()

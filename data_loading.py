@@ -103,28 +103,30 @@ def augment_data(X, y, fs=256, window_length=4.5, shift_step=0.25, max_shift=1.0
     shift_points = int(shift_step * fs)
     max_shift_points = int(max_shift * fs)
 
-    augmented_X = []
-    augmented_y = []
+    # Calculate the total number of augmented samples
+    num_shifts = (2 * max_shift_points // shift_points) + 1
+    total_samples = len(X) * num_shifts
 
+    # Pre-allocate the arrays
+    augmented_X = np.zeros((total_samples, num_points_per_window, X.shape[2]))
+    augmented_y = np.zeros(total_samples, dtype=int)
+
+    sample_index = 0
     for i in range(len(X)):
-        # Starting point of the original window
         start_point = max_shift_points
 
         for shift in range(-max_shift_points, max_shift_points + 1, shift_points):
-            # Calculate the starting and ending points of the shifted window
             start = start_point + shift
             end = start + num_points_per_window
 
-            # Extract the shifted window and add it to augmented data
-            shifted_window = X[i, start:end, :]
-            augmented_X.append(shifted_window)
-            augmented_y.append(y[i])
+            if start >= 0 and end <= X.shape[1]:
+                shifted_window = X[i, start:end, :]
+                augmented_X[sample_index] = shifted_window
+                augmented_y[sample_index] = y[i]
+                sample_index += 1
 
-    X = np.array(augmented_X)
-    y = np.array(augmented_y)
+    print(augmented_X.shape)
+    print(augmented_y.shape)
 
-    print(X.shape)
-    print(y.shape)
-
-    return X, y
+    return augmented_X, augmented_y
 # %%
