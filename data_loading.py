@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
+from sklearn.model_selection import train_test_split
 
 
 def load_dataset(directory_path="PartB/biosignals_raw/biosignals_raw", signal_names=None):
@@ -62,6 +63,37 @@ def load_dataset(directory_path="PartB/biosignals_raw/biosignals_raw", signal_na
     return data
 
 
+def split_data_by_candidate(data, test_size, random_state=42):
+    """
+    Splits the dataset into training and test sets based on candidate ID.
+
+    :param data: List of dictionaries, each containing 'candidate' and other keys.
+    :param test_size: Number of candidates to include in the test set.
+    :return: A tuple (train_data, test_data).
+    """
+
+    # Group data by candidate
+    data_by_candidate = {}
+    for record in data:
+        candidate = record['candidate']
+        if candidate not in data_by_candidate:
+            data_by_candidate[candidate] = []
+        data_by_candidate[candidate].append(record)
+
+    # Get list of unique candidates
+    unique_candidates = list(data_by_candidate.keys())
+
+    # Split candidates into train and test sets
+    train_candidates, test_candidates = train_test_split(unique_candidates, test_size=test_size,
+                                                         random_state=random_state)
+
+    # Split data into train and test based on candidates
+    train_data = [item for candidate in train_candidates for item in data_by_candidate[candidate]]
+    test_data = [item for candidate in test_candidates for item in data_by_candidate[candidate]]
+
+    return train_data, test_data
+
+
 def create_input_space(data):
     # Preallocate lists for X and y, assuming we know the length of data
     num_entries = len(data)
@@ -77,8 +109,8 @@ def create_input_space(data):
     # Convert list of arrays to a NumPy array of objects
     X = np.array(X, dtype=object)
 
-    print(X.shape)
-    print(y.shape)
+    print(f"X-Shape: {X.shape}")
+    print(f"y-Shape: {y.shape}")
 
     return X, y
 
@@ -125,8 +157,8 @@ def augment_data(X, y, fs=256, window_length=4.5, shift_step=0.25, max_shift=1.0
                 augmented_y[sample_index] = y[i]
                 sample_index += 1
 
-    print(augmented_X.shape)
-    print(augmented_y.shape)
+    print(f"Augmented X.shape: {augmented_X.shape}")
+    print(f"Augmented y.shape: {augmented_y.shape}")
 
     return augmented_X, augmented_y
 # %%

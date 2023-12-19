@@ -4,6 +4,36 @@ import numpy as np
 from scipy.signal import butter, filtfilt, resample
 
 
+def trim_signals(X, fs=256, window_length=4.5):
+    """
+    Trim or extend signals in the dataset to a specified window length.
+
+    Args:
+    - X (np.array): Original data array of shape (num_samples, num_timepoints, num_signals).
+    - fs (int): Sampling frequency.
+    - window_length (float): Desired length of the window in seconds.
+
+    Returns:
+    - np.array: Trimmed or extended data array.
+    """
+    num_points_per_window = int(window_length * fs)
+    num_samples, num_timepoints, num_signals = X.shape
+
+    # Pre-allocate the array
+    trimmed_X = np.zeros((num_samples, num_points_per_window, num_signals))
+
+    for i in range(num_samples):
+        if num_timepoints > num_points_per_window:
+            # Trim the signal if it's longer than the desired window
+            trimmed_X[i] = X[i, :num_points_per_window, :]
+        else:
+            # Extend the signal with zeros if it's shorter than the desired window
+            trimmed_X[i, :num_timepoints] = X[i]
+
+    print(f"Trimmed X.shape: {trimmed_X.shape}")
+    return trimmed_X
+
+
 def normalize_data(X, local=True):
     """
     Normalize each signal in the data either locally or globally.
