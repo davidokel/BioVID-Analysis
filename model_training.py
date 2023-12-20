@@ -28,13 +28,13 @@ class PyTorchModel(Model):
         self.optimizer = optimizer
         self.device = device
 
-    def _create_dataloader(self, X, y, batch_size=32, shuffle=True):
+    def _create_dataloader(self, X, y, batch_size=64, shuffle=True):
         X_tensor = torch.tensor(X, dtype=torch.float32)
         y_tensor = torch.tensor(y, dtype=torch.long)
         dataset = TensorDataset(X_tensor, y_tensor)
         return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
-    def fit(self, X_train, y_train, num_epochs=25, validation_split=0.1, patience=3):
+    def fit(self, X_train, y_train, num_epochs=25, validation_split=0.1, patience=5):
         self.model.to(self.device)
 
         # Split training data for validation
@@ -90,7 +90,7 @@ class PyTorchModel(Model):
     def predict(self, X_test):
         self.model.to(self.device)
         self.model.eval()
-        test_loader = self._create_dataloader(X_test, np.zeros(len(X_test)), batch_size=32, shuffle=False)
+        test_loader = self._create_dataloader(X_test, np.zeros(len(X_test)), batch_size=128, shuffle=False)
         predictions = []
         with torch.no_grad():
             for inputs, _ in test_loader:
@@ -124,7 +124,7 @@ def evaluate_classification_model(model, X_train, y_train, X_test, y_test):
 
     # Confusion Matrix
     cm = confusion_matrix(y_test, predictions)
-    sns.heatmap(cm, annot=True, fmt='d')
+    sns.heatmap(cm, annot=True, cmap="crest")
     plt.title('Confusion Matrix')
     plt.ylabel('Actual')
     plt.xlabel('Predicted')

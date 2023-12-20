@@ -117,7 +117,7 @@ def create_input_space(data):
 
 def augment_data(X, y, fs=256, window_length=4.5, shift_step=0.25, max_shift=1.0):
     """
-    Perform time-shifting data augmentation for BioVid Heat Pain Database.
+    Perform time-shifting data augmentation while maintaining class balance.
 
     Args:
     - X (np.array): Original data array of shape (num_samples, num_timepoints, num_signals).
@@ -135,20 +135,18 @@ def augment_data(X, y, fs=256, window_length=4.5, shift_step=0.25, max_shift=1.0
     shift_points = int(shift_step * fs)
     max_shift_points = int(max_shift * fs)
 
-    # Calculate the total number of augmented samples
-    num_shifts = (2 * max_shift_points // shift_points) + 1
-    total_samples = len(X) * num_shifts
+    # Calculate the total number of augmented samples per original sample
+    num_shifts_per_sample = (2 * max_shift_points // shift_points) + 1
 
     # Pre-allocate the arrays
+    total_samples = len(X) * num_shifts_per_sample
     augmented_X = np.zeros((total_samples, num_points_per_window, X.shape[2]))
     augmented_y = np.zeros(total_samples, dtype=int)
 
     sample_index = 0
     for i in range(len(X)):
-        start_point = max_shift_points
-
         for shift in range(-max_shift_points, max_shift_points + 1, shift_points):
-            start = start_point + shift
+            start = max_shift_points + shift
             end = start + num_points_per_window
 
             if start >= 0 and end <= X.shape[1]:
@@ -156,6 +154,10 @@ def augment_data(X, y, fs=256, window_length=4.5, shift_step=0.25, max_shift=1.0
                 augmented_X[sample_index] = shifted_window
                 augmented_y[sample_index] = y[i]
                 sample_index += 1
+
+    # Trim arrays in case some windows did not fit
+    augmented_X = augmented_X[:sample_index]
+    augmented_y = augmented_y[:sample_index]
 
     print(f"Augmented X.shape: {augmented_X.shape}")
     print(f"Augmented y.shape: {augmented_y.shape}")
